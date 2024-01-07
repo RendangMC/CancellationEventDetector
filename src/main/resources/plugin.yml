@@ -1,0 +1,4 @@
+name: CancelEventDetector
+version: '${project.version}'
+main: org.stegripe.cancellationeventdetector.CancellationEventDetector
+api-version: '1.20'
