@@ -17,27 +17,27 @@ import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.RegisteredListener;
 import com.google.common.collect.Lists;
 
-public class CancellationDetector<TEvent extends Event> {
-    interface CancelListener<TEvent extends Event> {
-        public void onCancelled(Plugin plugin, TEvent event);
+public class CancellationDetector {
+    interface CancelListener {
+        public void onCancelled(Plugin plugin, Event event);
     }
 
-    private final Class<TEvent> eventClazz;
-    private final List<CancelListener<TEvent>> listeners = Lists.newArrayList();
+    private final Class eventClazz;
+    private final List<CancelListener> listeners = Lists.newArrayList();
 
     // For reverting the detector
     private EnumMap<EventPriority, ArrayList<RegisteredListener>> backup;
 
-    public CancellationDetector(Class<TEvent> eventClazz) {
+    public CancellationDetector(Class eventClazz) {
         this.eventClazz = eventClazz;
         injectProxy();
     }
 
-    public void addListener(CancelListener<TEvent> listener) {
+    public void addListener(CancelListener listener) {
         listeners.add(listener);
     }
 
-    public void removeListener(CancelListener<Event> listener) {
+    public void removeListener(CancelListener listener) {
         listeners.remove(listener);
     }
 
@@ -119,7 +119,7 @@ public class CancellationDetector<TEvent extends Event> {
 
                     // See if this plugin cancelled the event
                     if (!prior && getCancelState(event)) {
-                        invokeCancelled(getPlugin(), (TEvent) event);
+                        invokeCancelled(getPlugin(), (Event) event);
                     }
                 } else {
                     listener.callEvent(event);
@@ -128,8 +128,8 @@ public class CancellationDetector<TEvent extends Event> {
         };
     }
 
-    private void invokeCancelled(Plugin plugin, TEvent event) {
-        for (CancelListener<TEvent> listener : listeners) {
+    private void invokeCancelled(Plugin plugin, Event event) {
+        for (CancelListener listener : listeners) {
             listener.onCancelled(plugin, event);
         }
     }
