@@ -156,6 +156,10 @@ public class CancellationDetector {
         }
     }
 
+    public Class getEventClazz() {
+        return eventClazz;
+    }
+
     /**
      * Retrieve the handler list associated with the given class.
      *

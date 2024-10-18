@@ -2,3 +2,13 @@ name: CancelEventDetector
 version: '${project.version}'
 main: org.stegripe.cancellationeventdetector.CancellationEventDetector
 api-version: '1.20'
+depend:
+  - DCommandLib
+commands:
+  cancellactioneventdetector:
+    aliases:
+      - ced
+    description: Main command for CancellationEventDetector
+    usage: Command /cancellationeventdetector help for more information
+    permission: cancellationeventdetector.admin
+

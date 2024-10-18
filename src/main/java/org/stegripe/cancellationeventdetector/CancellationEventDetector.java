@@ -1,54 +1,67 @@
 package org.stegripe.cancellationeventdetector;
 
-import org.bukkit.event.Event;
-import org.bukkit.event.Listener;
-import org.bukkit.event.entity.*;
+import me.dlands.dcommandlib.api.DCommandLibrary;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.stegripe.cancellationeventdetector.command.Command;
+import org.stegripe.cancellationeventdetector.config.Config;
+import java.util.ArrayList;
+import java.util.List;
 
-public final class CancellationEventDetector extends JavaPlugin implements Listener {
-    private CancellationDetector entityBreedEventDetector = new CancellationDetector(EntityBreedEvent.class);
-    private CancellationDetector creatureSpawnEventDetector = new CancellationDetector(CreatureSpawnEvent.class);
-    private CancellationDetector entitySpawnEventDetector = new CancellationDetector(EntitySpawnEvent.class);
-    private CancellationDetector entityDamageEventDetector = new CancellationDetector(EntityDamageEvent.class);
-    private CancellationDetector entityDamageByEntityEventDetector = new CancellationDetector(EntityDamageByEntityEvent.class);
-    private CancellationDetector entityDeathEventDetector = new CancellationDetector(EntityDeathEvent.class);
-    private CancellationDetector entityDamageByBlockEventDetector = new CancellationDetector(EntityDamageByBlockEvent.class);
+public final class CancellationEventDetector extends JavaPlugin {
+
+    private final Config pluginConfig;
+    private boolean detectorEnabled = false;
+
+    final List<CancellationDetector> detectors = new ArrayList<>();
+
+    public CancellationEventDetector(){
+        super();
+        pluginConfig = new Config(this);
+        loadDetector();
+    }
 
     @Override
     public void onEnable() {
         // Plugin startup logic
-        getServer().getPluginManager().registerEvents(this, this);
-        entityBreedEventDetector.addListener((plugin, event) -> {
-            getLogger().info("EntityBreedEvent is canceled by " + plugin.getName());
-        });
-        creatureSpawnEventDetector.addListener((plugin, event) -> {
-            getLogger().info("CreatureSpawnEvent is canceled by " + plugin.getName());
-        });
-        entitySpawnEventDetector.addListener((plugin, event) -> {
-            getLogger().info("EntitySpawnEvent is canceled by " + plugin.getName());
-        });
-        entityDamageEventDetector.addListener((plugin, event) -> {
-            getLogger().info("EntityDamageEvent is canceled by " + plugin.getName());
-        });
-        entityDamageByEntityEventDetector.addListener((plugin, event) -> {
-            getLogger().info("EntityDamageByEntityEvent is canceled by " + plugin.getName());
-        });
-        entityDeathEventDetector.addListener((plugin, event) -> {
-            getLogger().info("EntityDeathEvent is canceled by " + plugin.getName());
-        });
-        entityDamageByBlockEventDetector.addListener((plugin, event) -> {
-            getLogger().info("EntityDamageByBlockEvent is canceled by " + plugin.getName());
-        });
+        DCommandLibrary.getInstance().getCommandManager().registerCommand(this, new Command(this));
     }
 
     @Override
     public void onDisable() {
         // Plugin shutdown logic
-        entityBreedEventDetector.close();
-        creatureSpawnEventDetector.close();
-        entitySpawnEventDetector.close();
-        entityDamageEventDetector.close();
-        entityDamageByEntityEventDetector.close();
-        entityDeathEventDetector.close();
+        unloadDetector();
+        getLogger().info("Unload detector.");
+    }
+
+    public void unloadDetector() {
+        List<CancellationDetector> toRemove = new ArrayList<>();
+        for(CancellationDetector detector : detectors) {
+            detector.close();
+            getLogger().info("Unloaded detector for " + detector.getEventClazz().getName());
+            toRemove.add(detector);
+        }
+        detectors.removeAll(toRemove);
+    }
+
+    public void loadDetector(){
+        for(String className: pluginConfig.eventClasses) {
+            try {
+                Class<?> clazz = Class.forName(className);
+                CancellationDetector detector = new CancellationDetector(clazz);
+                detector.addListener((plugin, event) -> {
+                    if(detectorEnabled){
+                        getLogger().info( event.getEventName() + " is canceled by " + plugin.getName());
+                    }
+                });
+                getLogger().info("Loaded detector for " + className);
+                detectors.add(detector);
+            } catch (ClassNotFoundException e) {
+                getLogger().warning("Class not found: " + className);
+            }
+        }
+    }
+
+    public void setDetectorEnabled(boolean detectorEnabled) {
+        this.detectorEnabled = detectorEnabled;
     }
 }
